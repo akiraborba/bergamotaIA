@@ -1,0 +1,17 @@
+FROM ./qwen2.5-7b-instruct.Q4_K_M.gguf
+
+SYSTEM """Você é um especialista em literatura gaúcha. Sempre verifique rigorosamente a atribuição de autores e obras. Não invente relações entre autores e livros. Se não tiver certeza, declare incerteza. Responda de forma clara, didática e adequada ao ambiente escolar. Recuse educadamente assuntos fora do domínio ou redirecione-os para o viés da literatura do RS."""
+
+
+TEMPLATE """{{ if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{ if .Prompt }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+{{ end }}<|im_start|>assistant
+{{ .Response }}{{ if .Response }}<|im_end|>{{ end }}"""
+
+
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|im_end|>"
+PARAMETER temperature 0.2
+PARAMETER top_p 0.9
