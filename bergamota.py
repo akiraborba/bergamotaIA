@@ -16,28 +16,29 @@ docs = loader.load()
 vectorstore = Chroma.from_documents(docs, embeddings, persist_directory="./db_literatura")
 vector_retriever = vectorstore.as_retriever(
     search_type="similarity_score_threshold",
-    search_kwargs={"k": 3, "score_threshold": 0.5} 
+    search_kwargs={"k": 4, "score_threshold": 0.5} 
 )
 bm25_retriever = BM25Retriever.from_documents(docs)
-bm25_retriever.k = 3
+bm25_retriever.k = 4
 ensemble_retriever = EnsembleRetriever(
     retrievers=[vector_retriever, bm25_retriever],
     weights=[0.3, 0.7]
 )
 
 prompt = ChatPromptTemplate.from_template("""
-Você é um **especialista em literatura gaúcha**. 
-Sua missão é responder às perguntas dos usuários com precisão factual, comentando APENAS obras e autores que estão no contexto fornecido abaixo.
+Você é o Bergamota.IA, um **especialista em literatura gaúcha**. 
+Sua missão é responder às perguntas dos usuários de forma rica, profunda e precisa.
 
-<context>
+Para garantir a precisão histórica e factual da sua resposta, use o <contexto> abaixo como sua **âncora de verdade**.
+
+<contexto>
 {context}
-</context>
+</contexto>
 
-INSTRUÇÕES E REGRAS OBRIGATÓRIAS:
-1. Se a pergunta mencionar uma obra ou autor, você deve OBRIGATORIAMENTE verificar se essa obra e esse autor estão descritos juntos no contexto fornecido.
-2. Se o usuário atribuir a obra a um autor errado, corrija usando estritamente o que está no contexto.
-3. REGRA DE SEGURANÇA ABSOLUTA: Se o contexto acima NÃO contiver informações sobre a obra ou autor perguntado, ou se o contexto falar de um autor (ex: Martha Medeiros) e a pergunta for sobre outro, NÃO tente adivinhar e NÃO use seu conhecimento externo. Responda exatamente: "Bah, vivente, não encontrei registros exatos sobre essa obra ou autor nos meus arquivos."
-4. Jamais invente relações de autoria que não estejam explicitamente escritas dentro das tags <context></context>.
+DIRETRIZES DE RESPOSTA:
+1. **Âncora Factual:** Você PODE (e deve) usar o seu amplo conhecimento sobre literatura gaúcha para expandir a resposta, explicar enredos e dar detalhes. Contudo, os dados essenciais (quem escreveu a obra, ano de publicação e tema central) devem OBRIGATORIAMENTE bater com o que está no <contexto>.
+2. **Correção de Rumores:** Se o usuário trouxer uma informação errada (ex: trocar o autor de um livro), use os dados do contexto para corrigi-lo educadamente.
+3. **Limite de Alucinação:** Se o usuário perguntar sobre uma obra ou autor que NÃO está no contexto e sobre a qual você não tem certeza absoluta dos fatos, não invente. Diga que não encontrou essa informação nos registros locais.
 
 Pergunta: {input}
 """)
@@ -67,14 +68,5 @@ while True:
     if pergunta.lower() == 'sair':
         break
     else:
-
-        print("\n🔍 [Análise do RAG] Buscando documentos...")
-        docs_buscados = ensemble_retriever.invoke(pergunta)
-        
-        print("--- CONTEXTO INJETADO NO MODELO ---")
-        for i, doc in enumerate(docs_buscados):
-            print(f"Trecho {i+1}: {doc.page_content[:200]}...") # Mostra os primeiros 200 caracteres de cada trecho retornado
-        print("-----------------------------------\n")
-
         resposta = qa_chain.invoke({"input": pergunta})
         print(f"Bergamota 🍊: {resposta['answer']}")
